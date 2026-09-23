@@ -127,11 +127,33 @@ test('the page never receives the answer key', async () => {
   await page.waitForSelector('#view-play:not(.hidden)');
 
   const key = await answers();
-  const everything = payloads.join('\n');
+
+  // Structural check first: no response may carry an `answer` field at any
+  // depth. This is the guarantee, and it cannot be fooled by casing.
+  const seenKeys = new Set();
+  const walk = (node) => {
+    if (Array.isArray(node)) node.forEach(walk);
+    else if (node && typeof node === 'object') {
+      for (const [k, v] of Object.entries(node)) { seenKeys.add(k); walk(v); }
+    }
+  };
+  for (const body of payloads) {
+    try { walk(JSON.parse(body)); } catch { /* non-JSON bodies carry no fields */ }
+  }
+  assert.ok(!seenKeys.has('answer'), `a response carried an "answer" field`);
+
+  // Then a textual check, case-insensitively, after removing legitimate clue
+  // text — a clue may contain its own answer ("Protective measure against
+  // loss"), and that is the author's choice, not a leak by the server.
+  let blob = payloads.join('\n');
+  const clues = await page.evaluate(() =>
+    window.__crossword.state.puzzle.entries.map((e) => e.clue));
+  for (const clue of clues) blob = blob.split(JSON.stringify(clue)).join('""');
+
   for (const { answer } of key) {
     assert.ok(
-      !everything.includes(answer),
-      `answer ${answer} appeared in a response the browser received`,
+      !new RegExp(answer, 'i').test(blob),
+      `answer ${answer} appeared in a response outside of clue text`,
     );
   }
   await page.context().close();

@@ -183,3 +183,46 @@ test('the leaderboard lists competitors and marks the first three', async () => 
   assert.deepEqual(page.__errors, []);
   await page.context().close();
 });
+
+test('the preview warns when a clue gives away another answer', async () => {
+  const page = await newPage();
+  await signIn(page);
+
+  // "Protective measure against loss" contains LOSS, which is the answer to a
+  // different clue in the same puzzle.
+  await page.evaluate(() => localStorage.setItem('crossword.admin.draft', JSON.stringify([
+    { clue: 'Protective measure against loss', answer: 'INSURANCE' },
+    { clue: 'Opposite of profit', answer: 'LOSS' },
+    { clue: 'Checked for accuracy', answer: 'AUDIT' },
+  ])));
+  await page.reload();
+  await page.waitForSelector('#view-console:not(.hidden)');
+
+  await page.click('#generate');
+  await page.waitForSelector('#preview:not(.hidden)');
+  await page.waitForSelector('#clue-warnings:not(.hidden)');
+
+  const text = await page.textContent('#clue-warnings');
+  assert.match(text, /give an answer away/i);
+  assert.match(text, /LOSS/);
+  await page.context().close();
+});
+
+test('a clean clue set produces no giveaway warning', async () => {
+  const page = await newPage();
+  await signIn(page);
+
+  await page.evaluate(() => localStorage.setItem('crossword.admin.draft', JSON.stringify([
+    { clue: 'Chance of something going wrong', answer: 'RISK' },
+    { clue: 'Checked for accuracy', answer: 'AUDIT' },
+    { clue: 'Group working together', answer: 'TEAM' },
+  ])));
+  await page.reload();
+  await page.waitForSelector('#view-console:not(.hidden)');
+
+  await page.click('#generate');
+  await page.waitForSelector('#preview:not(.hidden)');
+  await page.waitForTimeout(300);
+  assert.ok(await page.locator('#clue-warnings').isHidden(), 'no warning expected');
+  await page.context().close();
+});

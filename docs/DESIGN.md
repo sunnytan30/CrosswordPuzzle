@@ -161,7 +161,25 @@ Estimated calls per competitor over a 30-minute event: 1 join, 1 puzzle fetch,
 At 150 competitors that is ~51,000 database calls and ~150 MB of egress,
 peaking around 28 requests/second. Supabase Free allows 5 GB egress per month
 and does not cap request counts, so this fits with a wide margin. Static asset
-traffic on Cloudflare Pages is unmetered.
+traffic on Cloudflare is unmetered.
+
+Measured against the live project on 23 September 2026, with 150 concurrent
+sessions driving the real endpoints for 60 seconds:
+
+| | |
+|---|---|
+| calls | 4,119 |
+| throughput | 60.7 req/s |
+| latency p50 | 328 ms |
+| latency p95 | 863 ms |
+| latency p99 | 1,154 ms |
+| slowest | 1,584 ms |
+| errors | none |
+
+That is twice the peak rate the event is expected to generate, with no errors.
+The latencies include a round trip from the test machine outside Singapore to
+the ap-southeast-1 project; competitors in the office will see considerably
+less.
 
 ## 10. Build plan (2–4 weeks)
 

@@ -335,6 +335,29 @@ function renderPreview() {
     `${p.entries.length} of ${p.entries.length + p.unplaced.length} placed · `
     + `${p.width} × ${p.height} grid · ${p.intersections} crossings`;
 
+  // A clue that contains one of the puzzle's own answers hands it out for
+  // free. Easy to do by accident ("Protective measure against loss" gives away
+  // LOSS), and invisible until someone notices mid-competition.
+  const giveaways = [];
+  for (const entry of p.entries) {
+    for (const other of p.entries) {
+      if (new RegExp(`\\b${other.answer}\\b`, 'i').test(entry.clue)) {
+        giveaways.push(entry.number + ' ' + entry.direction
+          + ' ("' + entry.clue + '") contains the answer to '
+          + other.number + ' ' + other.direction + ': ' + other.answer);
+      }
+    }
+  }
+
+  const warnings = $('clue-warnings');
+  if (giveaways.length) {
+    warnings.textContent = 'These clues give an answer away — '
+      + giveaways.join('; ') + '. The puzzle still works, but consider rewording.';
+    warnings.classList.remove('hidden');
+  } else {
+    warnings.classList.add('hidden');
+  }
+
   const unplaced = $('unplaced');
   if (p.unplaced.length) {
     unplaced.textContent =
