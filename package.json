@@ -1,0 +1,10 @@
+{
+  "name": "crossword-competition",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Online crossword competition for ~150 simultaneous competitors, on free-tier hosting.",
+  "scripts": {
+    "test": "node --test tests/"
+  }
+}
