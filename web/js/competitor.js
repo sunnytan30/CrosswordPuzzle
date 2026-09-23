@@ -219,7 +219,6 @@ async function startPlaying() {
     for (const [k, letter] of Object.entries(puzzle.grid_state || {})) {
       if (typeof letter === 'string' && /^[A-Z]$/.test(letter)) state.letters.set(k, letter);
     }
-    fillSolvedLetters();
   }
 
   show('view-play');
@@ -295,17 +294,6 @@ function firstUnsolvedEntry() {
 /** A cell is locked once any entry running through it has been confirmed. */
 function isLocked(r, c) {
   return entriesAt(r, c).some((e) => state.solved.has(e.id));
-}
-
-/** Once an entry is confirmed, its letters are known to be right. */
-function fillSolvedLetters() {
-  // The server never sends answers, so we can only fill from what the
-  // competitor typed — which, for a confirmed entry, was correct.
-  for (const entry of state.puzzle.entries) {
-    if (!state.solved.has(entry.id)) continue;
-    // Letters are already in state.letters from their own typing; nothing to
-    // do beyond leaving them in place.
-  }
 }
 
 function chooseInitialCellSize() {
