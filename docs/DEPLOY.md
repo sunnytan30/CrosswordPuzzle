@@ -17,21 +17,46 @@ it grants only the `anon` role, which can call five functions and read no table.
 
 ## 1. Create the administrator account
 
-In the Supabase dashboard, **Authentication → Users → Add user**:
+In the Supabase dashboard, **check the project selector at the top left says
+`crossword-competition`** — not `bike-maintenance-tracker`. This is the easiest
+thing to get wrong, and creating the user in the other project looks like it
+worked.
+
+Then **Authentication → Users → Add user**:
 
 - Enter your email and a strong password.
 - Tick **Auto Confirm User**, otherwise you will be stuck waiting for a
   confirmation email.
 
-Then in **SQL Editor**, grant it administrator rights:
+Confirm the user landed in the right project. In **SQL Editor**:
 
 ```sql
-insert into app.admins (user_id, email)
-select id, email from auth.users where email = 'you@example.com'
-on conflict (user_id) do nothing;
+select id, email from auth.users;
+```
 
--- Confirm it worked: this should return one row.
-select * from app.admins;
+If that returns nothing, the user went to a different project. Switch projects
+and create it again.
+
+Now grant it administrator rights. This deliberately fails loudly rather than
+quietly doing nothing if the email does not match:
+
+```sql
+do $$
+declare
+  v_email text := 'you@example.com';   -- <<< change this
+  v_id    uuid;
+begin
+  select id into v_id from auth.users where lower(email) = lower(v_email);
+  if v_id is null then
+    raise exception
+      'No user with email %. Create it under Authentication -> Users in THIS project first.', v_email;
+  end if;
+  insert into app.admins (user_id, email) values (v_id, v_email)
+  on conflict (user_id) do nothing;
+end $$;
+
+-- Must return exactly one row. If it is empty, you are not an administrator yet.
+select a.user_id, a.email from app.admins a;
 ```
 
 ## 2. Close the door behind you
