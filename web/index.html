@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f4ed8">
+<meta name="robots" content="noindex">
+<title>Crossword Competition</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<!-- 1. Join ---------------------------------------------------------------->
+<section id="view-join" class="wrap hidden">
+  <h1>Crossword Competition</h1>
+  <p class="muted">Enter your details to take part.</p>
+
+  <div id="join-error" class="error hidden" role="alert"></div>
+
+  <form id="join-form" class="card" novalidate>
+    <div class="field">
+      <label for="employee-id">Employee ID</label>
+      <input id="employee-id" name="employeeId" type="text"
+             inputmode="numeric" pattern="[0-9]*" maxlength="8"
+             autocomplete="off" placeholder="8 digits" required>
+      <p class="small muted" style="margin:6px 0 0">Exactly 8 digits.</p>
+    </div>
+
+    <div class="field">
+      <label for="display-name">Your name</label>
+      <input id="display-name" name="displayName" type="text" maxlength="60"
+             autocomplete="name" placeholder="As your colleagues know you" required>
+    </div>
+
+    <button id="join-submit" type="submit" class="grow" style="width:100%">Enter the competition</button>
+  </form>
+
+  <p class="small muted">
+    Your employee ID and name are recorded so the winners can be identified.
+  </p>
+</section>
+
+<!-- 2. Waiting room -------------------------------------------------------->
+<section id="view-waiting" class="wrap hidden center">
+  <h1 id="waiting-event-name">Crossword Competition</h1>
+  <div class="card stack">
+    <p class="big-number">⏳</p>
+    <p><strong id="waiting-name"></strong>, you are in.</p>
+    <p class="muted">The puzzle will open when the administrator starts the competition. Keep this page open.</p>
+    <p class="small muted" id="waiting-status">Checking…</p>
+  </div>
+  <p class="small muted">If your screen locks, unlock it and this page will catch up automatically.</p>
+</section>
+
+<!-- 3. Playing ------------------------------------------------------------->
+<section id="view-play" class="hidden">
+  <header class="bar">
+    <div>
+      <div class="small muted">Time left</div>
+      <div id="clock" class="clock">--:--</div>
+    </div>
+    <div class="center">
+      <div class="small muted">Solved</div>
+      <div id="progress" class="progress">0 / 0</div>
+    </div>
+    <div class="center">
+      <div class="small muted">Zoom</div>
+      <div class="row" style="gap:4px">
+        <button id="zoom-out" class="secondary" style="min-height:36px;padding:4px 10px" aria-label="Zoom out">−</button>
+        <button id="zoom-in" class="secondary" style="min-height:36px;padding:4px 10px" aria-label="Zoom in">+</button>
+      </div>
+    </div>
+  </header>
+
+  <div id="play-error" class="error hidden" role="alert" style="margin:12px 16px"></div>
+
+  <div class="grid-scroll" id="grid-scroll">
+    <div id="grid" class="grid" role="application" aria-label="Crossword grid"></div>
+  </div>
+
+  <div class="wrap" style="padding-top:8px">
+    <div class="columns">
+      <div>
+        <h2>Across</h2>
+        <ul id="clues-across" class="clue-list"></ul>
+      </div>
+      <div>
+        <h2>Down</h2>
+        <ul id="clues-down" class="clue-list"></ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="clue-bar">
+    <button id="prev-entry" class="secondary" aria-label="Previous clue">‹</button>
+    <div class="text">
+      <div id="clue-label" class="label">—</div>
+      <div id="clue-text" class="clue">Tap a square to begin.</div>
+    </div>
+    <button id="next-entry" class="secondary" aria-label="Next clue">›</button>
+  </div>
+
+  <input id="keyboard-catcher" class="keyboard-catcher" type="text"
+         autocomplete="off" autocorrect="off" autocapitalize="characters"
+         spellcheck="false" aria-hidden="true" tabindex="-1">
+</section>
+
+<!-- 4. Finished / time up -------------------------------------------------->
+<section id="view-done" class="wrap hidden center">
+  <h1 id="done-title">Finished</h1>
+  <div class="card stack">
+    <div id="done-icon" class="big-number">🎉</div>
+    <p id="done-message"></p>
+    <p id="done-time" class="big-number"></p>
+    <p class="muted small">The administrator has the full results. Thank you for taking part.</p>
+  </div>
+</section>
+
+<!-- 5. Fatal error --------------------------------------------------------->
+<section id="view-error" class="wrap hidden">
+  <h1>Something went wrong</h1>
+  <div class="error" id="fatal-message"></div>
+  <button id="fatal-retry" style="width:100%">Try again</button>
+</section>
+
+<script type="module" src="js/competitor.js"></script>
+</body>
+</html>

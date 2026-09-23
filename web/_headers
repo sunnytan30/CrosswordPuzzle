@@ -1,0 +1,20 @@
+# Cloudflare Pages headers.
+#
+# The app loads no third-party scripts, styles, fonts or images, so the policy
+# can be strict: everything comes from this origin, and the only outbound
+# connection is to the Supabase project.
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), interest-cohort=()
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://wtmzothubshasogrcbob.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Cache-Control: no-cache
+
+# Static assets are fingerprint-free, so keep them revalidating rather than
+# risking a stale bundle on event day.
+/css/*
+  Cache-Control: public, max-age=0, must-revalidate
+/js/*
+  Cache-Control: public, max-age=0, must-revalidate

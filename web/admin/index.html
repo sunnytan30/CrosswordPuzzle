@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Crossword Administration</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../css/app.css">
+</head>
+<body>
+
+<!-- Sign in ---------------------------------------------------------------->
+<section id="view-login" class="wrap hidden">
+  <h1>Administration</h1>
+  <p class="muted">Sign in to run the competition.</p>
+
+  <div id="login-error" class="error hidden" role="alert"></div>
+
+  <form id="login-form" class="card" novalidate>
+    <div class="field">
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="username" required>
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" required>
+    </div>
+    <button id="login-submit" type="submit" style="width:100%">Sign in</button>
+  </form>
+</section>
+
+<!-- Console ---------------------------------------------------------------->
+<section id="view-console" class="wrap hidden">
+  <div class="row" style="justify-content:space-between">
+    <h1 class="grow">Administration</h1>
+    <button id="sign-out" class="secondary">Sign out</button>
+  </div>
+
+  <div id="console-error" class="error hidden" role="alert"></div>
+  <div id="console-note" class="card hidden"></div>
+
+  <!-- Step 1: the event -->
+  <div class="card">
+    <h2 style="margin-top:0">1. Competition</h2>
+    <div id="event-summary" class="stack"></div>
+
+    <form id="create-form" class="stack hidden">
+      <div class="field">
+        <label for="event-name">Name</label>
+        <input id="event-name" type="text" maxlength="120" value="Crossword Competition" required>
+      </div>
+      <div class="field">
+        <label for="event-minutes">Duration (minutes)</label>
+        <input id="event-minutes" type="number" min="1" max="240" value="20" required>
+        <p class="small muted" style="margin:6px 0 0">
+          The shared clock runs for this long from the moment you press Start.
+          Late joiners get the same finish time, so they simply have less left.
+        </p>
+      </div>
+      <button type="submit">Create competition</button>
+    </form>
+  </div>
+
+  <!-- Step 2: the puzzle -->
+  <div class="card" id="puzzle-card">
+    <h2 style="margin-top:0">2. Clues and answers</h2>
+    <p class="small muted">
+      One clue and answer per row. Answers must be a single word, letters only,
+      3 to 15 characters, and all different.
+    </p>
+
+    <div class="table-scroll">
+      <table id="clue-table">
+        <thead>
+          <tr><th style="width:2.5em">#</th><th>Clue</th><th style="width:13em">Answer</th></tr>
+        </thead>
+        <tbody id="clue-rows"></tbody>
+      </table>
+    </div>
+
+    <div class="row" style="margin-top:12px">
+      <button id="add-row" class="secondary" type="button">Add a row</button>
+      <button id="load-sample" class="secondary" type="button">Load sample set</button>
+      <button id="generate" type="button">Generate grid</button>
+    </div>
+
+    <div id="generate-error" class="error hidden" role="alert" style="margin-top:12px"></div>
+
+    <div id="preview" class="hidden" style="margin-top:16px">
+      <div class="row" style="justify-content:space-between">
+        <h2 style="margin:0">Preview</h2>
+        <button id="regenerate" class="secondary" type="button">Try another layout</button>
+      </div>
+      <p id="preview-stats" class="small muted"></p>
+      <div id="unplaced" class="error hidden"></div>
+      <div class="grid-scroll">
+        <div id="preview-grid" class="grid"></div>
+      </div>
+      <button id="save-puzzle" style="margin-top:12px">Save this grid to the competition</button>
+    </div>
+  </div>
+
+  <!-- Step 3: run it -->
+  <div class="card">
+    <h2 style="margin-top:0">3. Run the competition</h2>
+    <div class="row">
+      <button id="open-event" class="secondary" type="button">Open for joining</button>
+      <button id="start-event" type="button">Start</button>
+      <button id="end-event" class="danger" type="button">End now</button>
+    </div>
+    <p id="run-state" class="small muted" style="margin-top:10px"></p>
+    <p class="small muted">
+      Competitors wait on the join screen until you press Start. Once started,
+      anyone arriving late joins straight away.
+    </p>
+  </div>
+
+  <!-- Step 4: results -->
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <h2 style="margin:0">4. Live results</h2>
+      <div class="row" style="gap:8px">
+        <button id="refresh-board" class="secondary" type="button">Refresh</button>
+        <button id="export-csv" class="secondary" type="button">Export CSV</button>
+      </div>
+    </div>
+    <p class="small muted" id="board-note">Updates every few seconds while the competition is running.</p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Name</th><th>Employee ID</th>
+            <th>Solved</th><th>Time</th><th>Wrong</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="board-rows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Dry run</h2>
+    <p class="small muted">
+      Clears every competitor from this competition and returns it to draft, so
+      you can rehearse and then start clean. This cannot be undone.
+    </p>
+    <button id="reset-event" class="danger" type="button">Reset competition</button>
+  </div>
+</section>
+
+<script type="module" src="../js/admin.js"></script>
+</body>
+</html>
