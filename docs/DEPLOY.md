@@ -69,36 +69,30 @@ gated on membership of `app.admins`, so a stranger's account could not run your
 competition. But with signups open, anyone could create an account against your
 project, and there is no reason to allow that.
 
-## 3. Deploy the frontend to Cloudflare Pages
+## 3. The frontend is deployed
 
-1. Push this repository to GitHub.
-2. Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** →
-   **Connect to Git**, and pick the repository.
-3. Build settings:
-   - Framework preset: **None**
-   - Build command: *leave empty* — there is no build step
-   - Build output directory: **`web`**
-4. **Save and Deploy.** You get a URL like
-   `https://crossword-competition.pages.dev`.
-
-Every push to the branch redeploys automatically.
-
-### After the first deploy
-
-`web/_headers` sets a Content Security Policy that only permits connections to
-the Supabase project. If you later move to a custom domain, nothing needs to
-change there — the policy constrains where the page may *connect to*, not where
-it is served from.
-
-## 4. The two URLs
+It is live on Cloudflare Workers (static assets served from `web/`):
 
 | Who | URL |
 |---|---|
-| Competitors | `https://<your-site>.pages.dev/` |
-| Administrator | `https://<your-site>.pages.dev/admin/` |
+| Competitors | https://crosswordpuzzle.yb747cwjr8.workers.dev/ |
+| Administrator | https://crosswordpuzzle.yb747cwjr8.workers.dev/admin/ |
 
-Give competitors the first one, ideally as a QR code on a slide. The admin URL
-is a separate page behind an email and password, not merely an obscure path.
+Pushing to the connected branch redeploys automatically.
+
+`web/_headers` sets a Content Security Policy permitting connections only to
+the Supabase project. Cloudflare Workers static assets honour `_headers`, the
+same as Pages.
+
+### A caveat worth planning around
+
+`*.workers.dev` subdomains are sometimes blocked by corporate web filters,
+because the domain is shared by every free Worker and is therefore abused.
+If any of your 150 competitors are on the office network or VPN, test from a
+company-managed device before the day. If it is blocked, attach a custom
+domain in the Worker's **Settings → Domains & Routes** — the app needs no
+change for that, because the CSP constrains where the page connects *to*, not
+where it is served *from*.
 
 ---
 

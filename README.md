@@ -13,6 +13,13 @@ any mobile or desktop browser, hosted on free tiers.
 **[Deployment and run-day guide](docs/DEPLOY.md)** · **[Design and security
 model](docs/DESIGN.md)** · **[Database](supabase/README.md)**
 
+## Live
+
+| Who | URL |
+|---|---|
+| Competitors | https://crosswordpuzzle.yb747cwjr8.workers.dev/ |
+| Administrator | https://crosswordpuzzle.yb747cwjr8.workers.dev/admin/ |
+
 ## Status
 
 - [x] Crossword grid generator
@@ -20,8 +27,8 @@ model](docs/DESIGN.md)** · **[Database](supabase/README.md)**
 - [x] Competitor web app
 - [x] Administrator console
 - [x] Test suites: generator, database, browser, load
-- [ ] Deployed to Cloudflare Pages *(needs your account — see the deploy guide)*
-- [ ] Administrator account created *(see the deploy guide)*
+- [x] Deployed to Cloudflare Workers
+- [x] Administrator account created and verified
 - [ ] Rehearsal with real devices
 
 ## How the outcome is kept honest
