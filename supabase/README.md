@@ -32,9 +32,10 @@ If you add a function, revoke from `anon` too, then re-run the linter.
 
 ```sql
 select * from test.run_all();
+select * from test.elapsed_event_checks();
 ```
 
-All 18 checks should pass. The fixture creates a *running* event and the
+All 18 checks in `run_all` and all 4 in `elapsed_event_checks` should pass. The fixture creates a *running* event and the
 `events_single_active` index permits only one, so do not run this against a
 live competition.
 
