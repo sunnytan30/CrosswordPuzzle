@@ -177,6 +177,14 @@ const rpcs = {
              event: { id: db.event.id, name: db.event.name, status } };
   },
 
+  get_open_event() {
+    const status = effectiveStatus(db.event);
+    if (status !== 'open' && status !== 'running') {
+      return { name: null, status: 'none' };
+    }
+    return { name: db.event.name, status };
+  },
+
   get_event_state({ p_token }) {
     const p = participantFor(p_token);
     p.last_seen_at = Date.now();
@@ -289,6 +297,16 @@ const rpcs = {
     }
     setPuzzle(p_puzzle);
     return { puzzle_id: uuid(), entry_count: entryCount() };
+  },
+
+  admin_set_event_title({ p_title }, auth) {
+    requireAdmin(auth);
+    const title = String(p_title ?? '').trim().replace(/\s+/g, ' ');
+    if (title.length < 1 || title.length > 120) {
+      throw new RpcError('The title must be between 1 and 120 characters.');
+    }
+    db.event.name = title;
+    return { name: title };
   },
 
   admin_open_event(_body, auth) {

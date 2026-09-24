@@ -94,6 +94,8 @@ export const competitor = {
   puzzle:    (token)                 => rpc('get_puzzle', { p_token: token }),
   check:     (token, entryId, guess) => rpc('check_answer', { p_token: token, p_entry_id: entryId, p_guess: guess }),
   save:      (token, gridState)      => rpc('save_progress', { p_token: token, p_grid_state: gridState }),
+  /** Title of the open competition, readable before anyone has joined. */
+  openEvent: ()                      => rpc('get_open_event', {}),
 };
 
 export const admin = {
@@ -107,4 +109,5 @@ export const admin = {
   board:     (t, id)             => rpc('admin_leaderboard', { p_event_id: id }, { accessToken: t }),
   release:   (t, pid)            => rpc('admin_release_participant', { p_participant_id: pid }, { accessToken: t }),
   reset:     (t, id)             => rpc('admin_reset_event', { p_event_id: id, p_confirm: 'RESET' }, { accessToken: t }),
+  setTitle:  (t, id, title)      => rpc('admin_set_event_title', { p_event_id: id, p_title: title }, { accessToken: t }),
 };

@@ -45,6 +45,19 @@
     <h2 style="margin-top:0">1. Competition</h2>
     <div id="event-summary" class="stack"></div>
 
+    <div id="title-editor" class="field hidden" style="margin-top:14px">
+      <label for="event-title">Competition title</label>
+      <p class="small muted" style="margin:0 0 6px">
+        Shown to competitors as the heading on the join screen, the waiting
+        room and the results screen, and as the browser tab title.
+      </p>
+      <div class="row" style="flex-wrap:nowrap">
+        <input id="event-title" class="grow" type="text" maxlength="120"
+               placeholder="Crossword Competition">
+        <button id="save-title" type="button" class="secondary">Save title</button>
+      </div>
+    </div>
+
     <form id="create-form" class="stack hidden">
       <div class="field">
         <label for="event-name">Name</label>
@@ -70,19 +83,41 @@
       3 to 15 characters, and all different.
     </p>
 
-    <div class="table-scroll">
-      <table id="clue-table">
-        <thead>
-          <tr><th style="width:2.5em">#</th><th>Clue</th><th style="width:13em">Answer</th></tr>
-        </thead>
-        <tbody id="clue-rows"></tbody>
-      </table>
+    <div id="row-setup" class="hidden">
+      <div class="field" style="max-width:22em">
+        <label for="row-count">How many clues do you want?</label>
+        <input id="row-count" type="number" min="1" max="60" value="20">
+        <p class="small muted" style="margin:6px 0 0">
+          You can add or delete rows afterwards.
+        </p>
+      </div>
+      <div class="btn-row">
+        <button id="create-rows" type="button">Create rows</button>
+        <button id="setup-sample" class="secondary" type="button">Load sample set</button>
+      </div>
     </div>
 
-    <div class="row" style="margin-top:12px">
-      <button id="add-row" class="secondary" type="button">Add a row</button>
-      <button id="load-sample" class="secondary" type="button">Load sample set</button>
-      <button id="generate" type="button">Generate grid</button>
+    <div id="clue-editor" class="hidden">
+      <div class="table-scroll">
+        <table id="clue-table">
+          <thead>
+            <tr>
+              <th style="width:2.5em">#</th>
+              <th>Clue</th>
+              <th style="width:13em">Answer</th>
+              <th style="width:3em"></th>
+            </tr>
+          </thead>
+          <tbody id="clue-rows"></tbody>
+        </table>
+      </div>
+
+      <div class="btn-row" style="margin-top:12px">
+        <button id="add-row" class="secondary" type="button">Add Row</button>
+        <button id="delete-row" class="secondary" type="button">Delete Row</button>
+        <button id="generate" type="button">Generate</button>
+        <button id="load-sample" class="secondary" type="button">Load Sample</button>
+      </div>
     </div>
 
     <div id="generate-error" class="error hidden" role="alert" style="margin-top:12px"></div>
@@ -98,17 +133,17 @@
       <div class="grid-scroll">
         <div id="preview-grid" class="grid"></div>
       </div>
-      <button id="save-puzzle" style="margin-top:12px">Save this grid to the competition</button>
+      <button id="save-puzzle" style="margin-top:12px">Use Grid</button>
     </div>
   </div>
 
   <!-- Step 3: run it -->
   <div class="card">
     <h2 style="margin-top:0">3. Run the competition</h2>
-    <div class="row">
-      <button id="open-event" class="secondary" type="button">Open for joining</button>
-      <button id="start-event" type="button">Start</button>
-      <button id="end-event" class="danger" type="button">End now</button>
+    <div class="btn-row">
+      <button id="open-event" type="button">Open Game</button>
+      <button id="start-event" class="go" type="button">Start Game</button>
+      <button id="end-event" class="danger" type="button">End Game</button>
     </div>
     <p id="run-state" class="small muted" style="margin-top:10px"></p>
     <p class="small muted">

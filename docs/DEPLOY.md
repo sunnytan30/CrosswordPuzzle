@@ -100,20 +100,31 @@ where it is served *from*.
 
 1. Open the admin URL and sign in.
 2. **Create competition** — name it and set the duration in minutes.
-3. Enter your 20 clues and answers. Answers must be a single word, letters
-   only, 3–15 characters, all different. The form names the row if one is
-   wrong, and your draft is kept in the browser as you type.
-4. **Generate grid.** Check the preview. **Try another layout** reshuffles it.
-   If anything appears under "Could not fit into the grid", swap that answer
-   for one sharing more letters with the rest, or accept that it will be left
-   out.
-5. **Save this grid to the competition.**
-6. **Open for joining.** Competitors can now enter their details and will sit
-   in the waiting room.
-7. **Start** when you are ready. One clock starts for everyone. Anyone arriving
-   late joins immediately and simply has less time left.
-8. Watch **Live results**. The first three finishers are highlighted.
-9. **Export CSV** for the record, and check the employee IDs against HR.
+3. Set the **Competition title**. This is what competitors see as the heading
+   on the join screen, the waiting room and the results screen, and as the
+   browser tab title. You can change it at any time, including mid-event.
+4. The first time, it asks **how many clues** you want and builds that many
+   rows. Add or remove rows afterwards with **Add Row** and **Delete Row**, or
+   the **×** at the end of each row. Deleting always asks first and names the
+   row it is about to remove.
+5. Enter your clues and answers. Answers must be a single word, letters only,
+   3–15 characters, all different. The form names the row if one is wrong, and
+   your draft is kept in the browser as you type.
+6. **Generate.** Check the preview. **Try another layout** reshuffles it.
+   - Anything under "Could not fit into the grid" was left out: swap that
+     answer for one sharing more letters with the rest, or accept the loss.
+   - A warning appears if a clue contains one of the puzzle's own answers,
+     which hands it out for free. Reword unless it was deliberate.
+7. **Use Grid** makes that grid the competition's puzzle. It then greys out to
+   "Grid in use" so you cannot save the same grid twice; press **Generate**
+   again to enable it for a different layout.
+8. **Open Game.** Competitors can now enter their details and will sit in the
+   waiting room.
+9. **Start Game** when you are ready. One clock starts for everyone. Anyone
+   arriving late joins immediately and simply has less time left.
+10. Watch **Live results**. The first three finishers are highlighted.
+    **End Game** stops it early if you need to.
+11. **Export CSV** for the record, and check the employee IDs against HR.
 
 ### If something goes wrong on the day
 
@@ -131,7 +142,8 @@ where it is served *from*.
 - [ ] **Wake the Supabase project.** Free projects pause after a week of
       inactivity. Open the dashboard a day before and confirm it says Active,
       then again on the morning.
-- [ ] Clues entered, grid generated and saved, nothing unplaced.
+- [ ] Competition title set.
+- [ ] Clues entered, grid generated and used, nothing unplaced, no giveaway warnings.
 - [ ] Duration set.
 - [ ] Signups disabled, admin password stored in your password manager.
 - [ ] A second device signed in to the admin console as a backup.

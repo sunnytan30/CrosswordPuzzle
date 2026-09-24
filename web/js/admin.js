@@ -25,6 +25,12 @@ const state = {
   rows: [],       // [{ clue, answer }]
   boardTimer: null,
   board: [],
+  // Which row the administrator last typed in, so "Delete Row" acts on the
+  // row they are looking at rather than always the last one.
+  focusedRow: null,
+  // True once the current preview has been saved, so "Use Grid" can grey out
+  // until a fresh grid is generated.
+  puzzleSaved: false,
 };
 
 // ----------------------------------------------------------------- helpers --
@@ -117,7 +123,7 @@ $('sign-out').addEventListener('click', () => signOut());
 async function enterConsole() {
   show('view-console');
   loadDraft();
-  renderRows();
+  renderClueSection();
   await refreshEvent();
   startBoardPolling();
 }
@@ -163,11 +169,26 @@ function renderEvent() {
     createForm.classList.toggle('hidden', e.status !== 'ended');
   }
 
+  // The title editor only makes sense once a competition exists.
+  $('title-editor').classList.toggle('hidden', !state.event);
+  if (state.event && document.activeElement !== $('event-title')) {
+    $('event-title').value = state.event.name;
+  }
+
   const status = state.event?.status;
   $('open-event').disabled = status !== 'draft';
   $('start-event').disabled = status !== 'open';
   $('end-event').disabled = !(status === 'open' || status === 'running');
-  $('save-puzzle').disabled = status !== 'draft';
+  // Greyed out once this grid is the competition's puzzle; Generate brings
+  // it back, so there is no way to save the same grid twice by accident.
+  $('save-puzzle').disabled = status !== 'draft' || state.puzzleSaved;
+  $('save-puzzle').textContent = state.puzzleSaved ? 'Grid in use' : 'Use Grid';
+  // Say why it is greyed out, since there are two different reasons.
+  $('save-puzzle').title = state.puzzleSaved
+    ? 'This grid is already the competition\u2019s puzzle. Press Generate for a different one.'
+    : status !== 'draft'
+      ? 'The puzzle can only be changed while the competition is a draft.'
+      : 'Make this grid the competition\u2019s puzzle.';
   $('reset-event').disabled = !state.event;
 
   $('run-state').textContent = !state.event
@@ -179,6 +200,16 @@ function renderEvent() {
         ended: 'Ended. Results below are final.',
       }[status] ?? '';
 }
+
+$('save-title').addEventListener('click', async () => {
+  if (!state.event) return;
+  const title = $('event-title').value.trim();
+  const result = await guard(() => admin.setTitle(state.token, state.event.id, title));
+  if (result) {
+    note(`Competitors will now see "${result.name}".`);
+    await refreshEvent();
+  }
+});
 
 $('create-form').addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -224,7 +255,16 @@ function loadDraft() {
       if (Array.isArray(rows) && rows.length) { state.rows = rows; return; }
     } catch { /* fall through */ }
   }
-  state.rows = Array.from({ length: TARGET_CLUES }, () => ({ clue: '', answer: '' }));
+  // No draft yet: ask how many clues rather than guessing.
+  state.rows = [];
+}
+
+/** Show either the "how many clues?" setup or the table, never both. */
+function renderClueSection() {
+  const empty = state.rows.length === 0;
+  $('row-setup').classList.toggle('hidden', !empty);
+  $('clue-editor').classList.toggle('hidden', empty);
+  if (!empty) renderRows();
 }
 
 function saveDraft() {
@@ -267,21 +307,98 @@ function renderRows() {
     answerCell.appendChild(answerInput);
     tr.appendChild(answerCell);
 
+    const deleteCell = document.createElement('td');
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'secondary';
+    deleteButton.textContent = '\u00D7';
+    deleteButton.title = `Delete row ${index + 1}`;
+    deleteButton.setAttribute('aria-label', `Delete row ${index + 1}`);
+    deleteButton.style.minHeight = '34px';
+    deleteButton.style.padding = '2px 10px';
+    deleteButton.addEventListener('click', () => deleteRow(index));
+    deleteCell.appendChild(deleteButton);
+    tr.appendChild(deleteCell);
+
+    // Remember where the administrator is working, so the toolbar's
+    // "Delete Row" removes the row they are actually looking at.
+    for (const input of [clueInput, answerInput]) {
+      input.addEventListener('focus', () => {
+        state.focusedRow = index;
+        highlightFocusedRow();
+      });
+    }
+
     tbody.appendChild(tr);
   });
+  highlightFocusedRow();
+}
+
+function highlightFocusedRow() {
+  const rows = $('clue-rows').querySelectorAll('tr');
+  rows.forEach((tr, i) => tr.classList.toggle('row-focused', i === state.focusedRow));
+}
+
+/** Delete one row, always confirming and always naming what is being lost. */
+function deleteRow(index) {
+  const row = state.rows[index];
+  if (!row) return;
+
+  const described = row.clue.trim() || row.answer.trim()
+    ? `\n\n  ${row.clue.trim() || '(no clue)'} \u2014 ${row.answer.trim() || '(no answer)'}`
+    : ' (it is empty)';
+
+  if (!confirm(`Delete row ${index + 1}?${described}`)) return;
+
+  state.rows.splice(index, 1);
+  if (state.focusedRow != null) {
+    if (state.focusedRow === index) state.focusedRow = null;
+    else if (state.focusedRow > index) state.focusedRow -= 1;
+  }
+  saveDraft();
+  renderClueSection();
 }
 
 $('add-row').addEventListener('click', () => {
   state.rows.push({ clue: '', answer: '' });
+  state.focusedRow = state.rows.length - 1;
   saveDraft();
-  renderRows();
+  renderClueSection();
+  // Put the cursor straight into the row that was just added.
+  $('clue-rows').querySelector('tr:last-child input')?.focus();
 });
 
-$('load-sample').addEventListener('click', () => {
+$('delete-row').addEventListener('click', () => {
+  if (!state.rows.length) return;
+  // The row they were last typing in, or the last row if they have not
+  // touched one yet.
+  const index = state.focusedRow ?? state.rows.length - 1;
+  deleteRow(Math.min(index, state.rows.length - 1));
+});
+
+function loadSample() {
   state.rows = SAMPLE.map(([clue, answer]) => ({ clue, answer }));
+  state.focusedRow = null;
   saveDraft();
-  renderRows();
+  renderClueSection();
   note('Sample clues loaded. Replace them with your own before the event.');
+}
+
+$('load-sample').addEventListener('click', loadSample);
+$('setup-sample').addEventListener('click', loadSample);
+
+$('create-rows').addEventListener('click', () => {
+  const count = Number($('row-count').value);
+  if (!Number.isInteger(count) || count < 1 || count > 60) {
+    setError('console-error', 'Enter a number of clues between 1 and 60.');
+    return;
+  }
+  setError('console-error', '');
+  state.rows = Array.from({ length: count }, () => ({ clue: '', answer: '' }));
+  state.focusedRow = 0;
+  saveDraft();
+  renderClueSection();
+  $('clue-rows').querySelector('input')?.focus();
 });
 
 /** Validate the admin's input and say exactly which row is wrong. */
@@ -317,6 +434,9 @@ function buildPreview(newSeed = false) {
 
   if (newSeed) state.seed = Math.floor(Math.random() * 1_000_000) + 1;
 
+  // A freshly generated grid has not been used yet, so "Use Grid" comes back.
+  state.puzzleSaved = false;
+
   try {
     state.puzzle = generatePuzzle(entries, { seed: state.seed });
   } catch (error) {
@@ -325,6 +445,7 @@ function buildPreview(newSeed = false) {
   }
 
   renderPreview();
+  renderEvent();
 }
 
 function renderPreview() {
@@ -434,7 +555,9 @@ $('save-puzzle').addEventListener('click', async () => {
 
   const result = await guard(() => admin.setPuzzle(state.token, state.event.id, payload));
   if (result) {
-    note(`Saved ${result.entry_count} clues to the competition. You can now open it for joining.`);
+    state.puzzleSaved = true;
+    note(`This grid is now the competition's puzzle (${result.entry_count} clues). `
+       + 'Press Generate again if you want to try a different one.');
     await refreshEvent();
   }
 });

@@ -282,3 +282,49 @@ test('an 8-digit employee ID is enforced in the browser too', async () => {
   assert.match(await page.textContent('#join-error'), /8 digits/);
   await page.context().close();
 });
+
+test('the join screen shows the title the administrator set', async () => {
+  await reseed({ start: false });
+
+  // Rename the competition the way the admin console does.
+  const signIn = await (await fetch(`${BASE}/auth/v1/token?grant_type=password`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'admin@example.com', password: 'crossword' }),
+  })).json();
+
+  await fetch(`${BASE}/rest/v1/rpc/admin_set_event_title`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${signIn.access_token}` },
+    body: JSON.stringify({ p_event_id: null, p_title: 'Annual Staff Crossword' }),
+  });
+
+  const page = await newPage();
+  await page.goto(BASE);
+  await page.waitForSelector('#view-join:not(.hidden)');
+
+  // The heading and the browser tab both follow the competition title.
+  await page.waitForFunction(
+    () => document.getElementById('join-title').textContent === 'Annual Staff Crossword',
+    null, { timeout: 8000 });
+  assert.equal(await page.title(), 'Annual Staff Crossword');
+
+  // And it carries through to the waiting room.
+  await page.fill('#employee-id', '55556666');
+  await page.fill('#display-name', 'Title Check');
+  await page.click('#join-submit');
+  await page.waitForSelector('#view-waiting:not(.hidden)');
+  assert.equal((await page.textContent('#waiting-event-name')).trim(), 'Annual Staff Crossword');
+
+  assert.deepEqual(page.__errors, []);
+  await page.context().close();
+});
+
+test('the join screen falls back to a default title when nothing is open', async () => {
+  const page = await newPage();
+  await page.goto(BASE);
+  await page.waitForSelector('#view-join:not(.hidden)');
+  await page.waitForTimeout(400);
+  const heading = (await page.textContent('#join-title')).trim();
+  assert.ok(heading.length > 0, 'the heading must never be blank');
+  await page.context().close();
+});

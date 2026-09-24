@@ -35,6 +35,7 @@ const state = {
   cellSize: Number(safeRead(ZOOM_KEY)) || 0,
   dirty: false,
   checking: false,
+  eventName: '',
 };
 
 let pollTimer = null;
@@ -71,6 +72,19 @@ function formatDuration(seconds) {
   const m = Math.floor(seconds / 60);
   const s = Math.round(seconds % 60);
   return m > 0 ? `${m}m ${String(s).padStart(2, '0')}s` : `${s}s`;
+}
+
+/**
+ * Apply the competition's title wherever competitors see it: the join
+ * heading, the waiting room, the results screen and the browser tab.
+ */
+function applyEventName(name) {
+  const title = (name ?? '').trim() || 'Crossword Competition';
+  state.eventName = title;
+  document.title = title;
+  $('join-title').textContent = title;
+  $('waiting-event-name').textContent = title;
+  $('done-event-name').textContent = title;
 }
 
 function show(viewId) {
@@ -159,7 +173,7 @@ async function refreshState() {
   state.finishedAt = info.finished_at ? new Date(info.finished_at).getTime() : null;
   state.displayName = info.display_name;
 
-  $('waiting-event-name').textContent = info.event_name || 'Crossword Competition';
+  applyEventName(info.event_name);
   return info;
 }
 
@@ -690,6 +704,12 @@ async function boot() {
   const saved = safeRead(TOKEN_KEY);
   if (!saved) {
     show('view-join');
+    // Nobody has a session yet, so read the title from the public endpoint.
+    // A failure here is cosmetic: the default heading stands.
+    try {
+      const open = await competitor.openEvent();
+      if (open?.name) applyEventName(open.name);
+    } catch { /* keep the default heading */ }
     return;
   }
 

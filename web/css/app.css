@@ -12,6 +12,7 @@
   --accent-ink: #ffffff;
   --solved: #147d4a;
   --solved-bg: #d7f0e1;
+  --go: #167d3f;
   --danger: #b3261e;
   --warn-bg: #fdf1d6;
   --highlight: #dbe6ff;
@@ -92,7 +93,31 @@ button.secondary {
   border-color: var(--line);
 }
 
+button.go     { background: var(--go); color: #fff; }
 button.danger { background: var(--danger); color: #fff; }
+
+/* A row of buttons all sized to the widest one.
+   `width: max-content` sizes the grid to its largest column, and
+   `grid-auto-columns: 1fr` then gives every column that same width. */
+.btn-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 10px;
+  width: max-content;
+  max-width: 100%;
+}
+
+.btn-row > button { width: 100%; }
+
+/* On a narrow screen equal columns get too cramped, so stack into two. */
+@media (max-width: 560px) {
+  .btn-row {
+    width: 100%;
+    grid-auto-flow: row;
+    grid-template-columns: 1fr 1fr;
+  }
+}
 
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -278,6 +303,8 @@ tbody tr.top-three { background: var(--solved-bg); }
 td.num { font-variant-numeric: tabular-nums; }
 
 .table-scroll { overflow-x: auto; }
+
+tr.row-focused > td { background: var(--highlight); }
 
 /* ------------------------------------------------------------- utilities -- */
 
