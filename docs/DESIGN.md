@@ -181,6 +181,28 @@ The latencies include a round trip from the test machine outside Singapore to
 the ap-southeast-1 project; competitors in the office will see considerably
 less.
 
+### 200 competitors, 24 September 2026
+
+Sustained, 200 concurrent sessions over 90 seconds: 7,981 calls at 81.8 req/s,
+p50 343 ms, p95 953 ms, p99 1,251 ms, **no errors**.
+
+The harder test is the thundering herd — every phone reacting to Start Game at
+the same instant, with no ramp-up:
+
+| Simultaneous call | 200 competitors | 400 competitors |
+|---|---|---|
+| `join_event` | p50 2,693 ms, max 3,586 ms | p50 4,985 ms, max 8,630 ms |
+| `get_event_state` | p50 517 ms, max 1,024 ms | p50 1,025 ms, max 1,727 ms |
+| `get_puzzle` | p50 530 ms, max 979 ms | p50 1,023 ms, max 1,369 ms |
+| `check_answer` | p50 548 ms, max 1,032 ms | p50 1,110 ms, max 1,361 ms |
+| failures | **0** | **0** |
+
+No ceiling was found at twice the required load. Two caveats on the numbers:
+every request went through a single egress proxy from one container, so the
+latencies are pessimistic compared with 200 separate phones on separate
+connections; and joining is the slowest call because it writes a row, which is
+why the join screen opens before the start rather than at it.
+
 ## 10. Build plan (2–4 weeks)
 
 1. Grid generator + test suite — **done**
