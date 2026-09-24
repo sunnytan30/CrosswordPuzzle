@@ -47,6 +47,21 @@ async function newPage() {
   return page;
 }
 
+/** A competition with no puzzle and no draft — a first-time console. */
+async function blankEvent() {
+  const res = await fetch(`${BASE}/__dev/blank`);
+  assert.ok(res.ok, 'blank event failed');
+}
+
+/** Seed the clue draft on the server, which is now where drafts live. */
+async function setServerDraft(rows) {
+  const res = await fetch(`${BASE}/__dev/draft`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(rows),
+  });
+  assert.ok(res.ok, 'draft seed failed');
+}
+
 async function signIn(page) {
   await page.goto(ADMIN);
   await page.waitForSelector('#view-login:not(.hidden)');
@@ -75,12 +90,15 @@ test('an administrator can build a grid and run the whole event', async () => {
   const page = await newPage();
   await signIn(page);
 
-  // A fresh draft competition.
+  // A fresh competition with nothing entered yet. This browser already has a
+  // cached copy from signing in, and the app deliberately keeps unsaved local
+  // work, so clear it to model a genuinely new console.
+  await blankEvent();
   await page.evaluate(() => localStorage.removeItem('crossword.admin.draft'));
   await page.reload();
   await page.waitForSelector('#view-console:not(.hidden)');
 
-  // With no draft, the setup prompt appears instead of the table.
+  // With no draft and no puzzle, the setup prompt appears instead of the table.
   await page.waitForSelector('#row-setup:not(.hidden)');
   await page.click('#setup-sample');
   await page.click('#generate');
@@ -99,10 +117,10 @@ test('the preview reports answers that cannot be interlocked', async () => {
   const page = await newPage();
   await signIn(page);
 
-  await page.evaluate(() => localStorage.setItem('crossword.admin.draft', JSON.stringify([
+  await setServerDraft([
     { clue: 'first', answer: 'ABCDE' },
     { clue: 'second', answer: 'FGHIJ' },
-  ])));
+  ]);
   await page.reload();
   await page.waitForSelector('#view-console:not(.hidden)');
 
@@ -117,10 +135,10 @@ test('a bad answer names the row that is wrong', async () => {
   const page = await newPage();
   await signIn(page);
 
-  await page.evaluate(() => localStorage.setItem('crossword.admin.draft', JSON.stringify([
+  await setServerDraft([
     { clue: 'fine', answer: 'RISK' },
     { clue: 'two words', answer: 'DATA PRIVACY' },
-  ])));
+  ]);
   await page.reload();
   await page.waitForSelector('#view-console:not(.hidden)');
 
@@ -136,10 +154,10 @@ test('duplicate answers are rejected before any grid is built', async () => {
   const page = await newPage();
   await signIn(page);
 
-  await page.evaluate(() => localStorage.setItem('crossword.admin.draft', JSON.stringify([
+  await setServerDraft([
     { clue: 'one', answer: 'RISK' },
     { clue: 'two', answer: 'risk' },
-  ])));
+  ]);
   await page.reload();
   await page.waitForSelector('#view-console:not(.hidden)');
 
@@ -192,11 +210,11 @@ test('the preview warns when a clue gives away another answer', async () => {
 
   // "Protective measure against loss" contains LOSS, which is the answer to a
   // different clue in the same puzzle.
-  await page.evaluate(() => localStorage.setItem('crossword.admin.draft', JSON.stringify([
+  await setServerDraft([
     { clue: 'Protective measure against loss', answer: 'INSURANCE' },
     { clue: 'Opposite of profit', answer: 'LOSS' },
     { clue: 'Checked for accuracy', answer: 'AUDIT' },
-  ])));
+  ]);
   await page.reload();
   await page.waitForSelector('#view-console:not(.hidden)');
 
@@ -214,11 +232,11 @@ test('a clean clue set produces no giveaway warning', async () => {
   const page = await newPage();
   await signIn(page);
 
-  await page.evaluate(() => localStorage.setItem('crossword.admin.draft', JSON.stringify([
+  await setServerDraft([
     { clue: 'Chance of something going wrong', answer: 'RISK' },
     { clue: 'Checked for accuracy', answer: 'AUDIT' },
     { clue: 'Group working together', answer: 'TEAM' },
-  ])));
+  ]);
   await page.reload();
   await page.waitForSelector('#view-console:not(.hidden)');
 
@@ -233,10 +251,9 @@ test('a clean clue set produces no giveaway warning', async () => {
 // ---------------------------------------------------------------- new UI --
 
 test('a first-time draft asks how many clues and builds that many rows', async () => {
+  await blankEvent();
   const page = await newPage();
   await signIn(page);
-  await page.evaluate(() => localStorage.removeItem('crossword.admin.draft'));
-  await page.reload();
   await page.waitForSelector('#view-console:not(.hidden)');
 
   await page.waitForSelector('#row-setup:not(.hidden)');
@@ -254,11 +271,11 @@ test('a first-time draft asks how many clues and builds that many rows', async (
 test('Add Row appends and Delete Row removes, after confirming', async () => {
   const page = await newPage();
   await signIn(page);
-  await page.evaluate(() => localStorage.setItem('crossword.admin.draft', JSON.stringify([
+  await setServerDraft([
     { clue: 'one', answer: 'RISK' },
     { clue: 'two', answer: 'TEAM' },
     { clue: 'three', answer: 'AUDIT' },
-  ])));
+  ]);
   await page.reload();
   await page.waitForSelector('#clue-editor:not(.hidden)');
 
@@ -281,11 +298,11 @@ test('Add Row appends and Delete Row removes, after confirming', async () => {
 test('Delete Row removes the row being edited, naming it in the prompt', async () => {
   const page = await newPage();
   await signIn(page);
-  await page.evaluate(() => localStorage.setItem('crossword.admin.draft', JSON.stringify([
+  await setServerDraft([
     { clue: 'first clue', answer: 'RISK' },
     { clue: 'second clue', answer: 'TEAM' },
     { clue: 'third clue', answer: 'AUDIT' },
-  ])));
+  ]);
   await page.reload();
   await page.waitForSelector('#clue-editor:not(.hidden)');
 
@@ -309,10 +326,10 @@ test('Delete Row removes the row being edited, naming it in the prompt', async (
 test('the per-row delete button also confirms first', async () => {
   const page = await newPage();
   await signIn(page);
-  await page.evaluate(() => localStorage.setItem('crossword.admin.draft', JSON.stringify([
+  await setServerDraft([
     { clue: 'alpha', answer: 'RISK' },
     { clue: 'beta', answer: 'TEAM' },
-  ])));
+  ]);
   await page.reload();
   await page.waitForSelector('#clue-editor:not(.hidden)');
 
@@ -327,9 +344,9 @@ test('the per-row delete button also confirms first', async () => {
 test('the clue toolbar buttons are in order and all the same width', async () => {
   const page = await newPage();
   await signIn(page);
-  await page.evaluate(() => localStorage.setItem('crossword.admin.draft', JSON.stringify([
+  await setServerDraft([
     { clue: 'one', answer: 'RISK' },
-  ])));
+  ]);
   await page.reload();
   await page.waitForSelector('#clue-editor:not(.hidden)');
 
@@ -368,18 +385,11 @@ test('the run buttons are renamed, coloured and equal width', async () => {
 });
 
 test('Use Grid greys out once used and returns when a new grid is generated', async () => {
-  await fetch(`${BASE}/__dev/seed?start=0`);
+  await blankEvent();
   const page = await newPage();
   await signIn(page);
-
-  // Put the competition back to draft so the puzzle can be set.
-  page.once('dialog', d => d.accept());
-  await page.click('#reset-event');
-  await page.waitForTimeout(400);
-
-  await page.evaluate(() => localStorage.removeItem('crossword.admin.draft'));
-  await page.reload();
   await page.waitForSelector('#view-console:not(.hidden)');
+  await page.waitForSelector('#row-setup:not(.hidden)');
   await page.click('#setup-sample');
   await page.waitForSelector('#clue-editor:not(.hidden)');
 
@@ -414,5 +424,91 @@ test('the administrator can set the title competitors see', async () => {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
   })).json();
   assert.equal(open.name, 'Finance Team Quiz 2026');
+  await page.context().close();
+});
+
+// ------------------------------------------------- draft persistence -----
+
+test('the clue draft survives signing out and back in', async () => {
+  await blankEvent();
+  const page = await newPage();
+  await signIn(page);
+  await page.waitForSelector('#view-console:not(.hidden)');
+  await page.waitForSelector('#row-setup:not(.hidden)');
+
+  await page.fill('#row-count', '3');
+  await page.click('#create-rows');
+  await page.waitForSelector('#clue-editor:not(.hidden)');
+
+  const inputs = page.locator('#clue-rows input');
+  await inputs.nth(0).fill('Chance of something going wrong');
+  await inputs.nth(1).fill('RISK');
+  await inputs.nth(2).fill('Checked for accuracy');
+  await inputs.nth(3).fill('AUDIT');
+
+  // Let the debounced save reach the server.
+  await page.waitForFunction(
+    () => /Saved to the competition/.test(document.getElementById('draft-status').textContent),
+    null, { timeout: 8000 });
+
+  await page.click('#sign-out');
+  await page.waitForSelector('#view-login:not(.hidden)');
+
+  // Signing out clears this browser's copy, so what comes back is the server's.
+  const localAfterSignOut = await page.evaluate(() => localStorage.getItem('crossword.admin.draft'));
+  assert.equal(localAfterSignOut, null, 'the local cache should be cleared on sign out');
+
+  await signIn(page);
+  await page.waitForSelector('#clue-editor:not(.hidden)', { timeout: 10000 });
+
+  const values = await page.locator('#clue-rows input').evaluateAll(els => els.map(e => e.value));
+  assert.deepEqual(values.slice(0, 4),
+    ['Chance of something going wrong', 'RISK', 'Checked for accuracy', 'AUDIT']);
+  await page.context().close();
+});
+
+test('the clue draft appears on a different device', async () => {
+  await fetch(`${BASE}/__dev/seed?start=0`);
+
+  // Device one types the clues.
+  await blankEvent();
+  const first = await newPage();
+  await signIn(first);
+  await first.waitForSelector('#row-setup:not(.hidden)');
+  await first.fill('#row-count', '2');
+  await first.click('#create-rows');
+  await first.waitForSelector('#clue-editor:not(.hidden)');
+
+  const inputs = first.locator('#clue-rows input');
+  await inputs.nth(0).fill('Group working together');
+  await inputs.nth(1).fill('TEAM');
+  await first.waitForFunction(
+    () => /Saved to the competition/.test(document.getElementById('draft-status').textContent),
+    null, { timeout: 8000 });
+
+  // Device two is a separate browser context: its own storage, no shared state.
+  const second = await newPage();
+  await signIn(second);
+  await second.waitForSelector('#clue-editor:not(.hidden)', { timeout: 10000 });
+
+  const values = await second.locator('#clue-rows input').evaluateAll(els => els.map(e => e.value));
+  assert.deepEqual(values.slice(0, 2), ['Group working together', 'TEAM']);
+  assert.match(await second.textContent('#draft-status'), /Loaded the draft/i);
+
+  await first.context().close();
+  await second.context().close();
+});
+
+test('a new device sees the clues of an already-saved puzzle', async () => {
+  // A competition with a puzzle already in play, and no draft stored.
+  await fetch(`${BASE}/__dev/seed?start=0`);
+
+  const page = await newPage();
+  await signIn(page);
+  await page.waitForSelector('#clue-editor:not(.hidden)', { timeout: 10000 });
+
+  const values = await page.locator('#clue-rows input').evaluateAll(els => els.map(e => e.value));
+  assert.ok(values.includes('INSURANCE'), 'the saved puzzle\'s answers should load back');
+  assert.match(await page.textContent('#draft-status'), /already saved/i);
   await page.context().close();
 });

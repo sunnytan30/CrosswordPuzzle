@@ -105,6 +105,8 @@ function seed({ start = false } = {}) {
     ends_at: null,
   };
   setPuzzle(puzzle);
+  db.event.clue_draft = null;
+  db.event.clue_draft_updated_at = null;
   if (start) {
     db.event.status = 'running';
     db.event.started_at = Date.now();
@@ -299,6 +301,29 @@ const rpcs = {
     return { puzzle_id: uuid(), entry_count: entryCount() };
   },
 
+  admin_save_draft({ p_rows }, auth) {
+    requireAdmin(auth);
+    if (!Array.isArray(p_rows)) throw new RpcError('Invalid draft payload.');
+    db.event.clue_draft = p_rows;
+    db.event.clue_draft_updated_at = new Date().toISOString();
+    return { ok: true, rows: p_rows.length, saved_at: db.event.clue_draft_updated_at };
+  },
+
+  admin_get_draft(_body, auth) {
+    requireAdmin(auth);
+    if (db.event?.clue_draft?.length) {
+      return { rows: db.event.clue_draft, source: 'draft',
+               saved_at: db.event.clue_draft_updated_at };
+    }
+    if (db.puzzle?.entries?.length) {
+      return {
+        rows: db.puzzle.entries.map((e) => ({ clue: e.clue, answer: e.answer })),
+        source: 'puzzle', saved_at: null,
+      };
+    }
+    return { rows: [], source: 'none', saved_at: null };
+  },
+
   admin_set_event_title({ p_title }, auth) {
     requireAdmin(auth);
     const title = String(p_title ?? '').trim().replace(/\s+/g, ' ');
@@ -411,6 +436,22 @@ const server = createServer(async (req, res) => {
   if (url.pathname === '/__dev/seed') {
     const event = seed({ start: url.searchParams.get('start') === '1' });
     return send(res, 200, { ok: true, event: { ...event, entries: entryCount() } });
+  }
+  if (url.pathname === '/__dev/blank') {
+    // A draft competition with no puzzle and no clue draft: what an
+    // administrator sees the very first time.
+    db.participants.clear(); db.byToken.clear(); db.byEmployee.clear();
+    db.event = { id: uuid(), name: 'Blank Competition', status: 'draft',
+                 duration_seconds: 1800, started_at: null, ends_at: null,
+                 clue_draft: null, clue_draft_updated_at: null };
+    db.puzzle = null;
+    return send(res, 200, { ok: true, event: db.event });
+  }
+  if (url.pathname === '/__dev/draft') {
+    const rows = await readBody(req);
+    db.event.clue_draft = rows;
+    db.event.clue_draft_updated_at = new Date().toISOString();
+    return send(res, 200, { ok: true, rows: rows.length });
   }
   if (url.pathname === '/__dev/answers') {
     return send(res, 200, db.puzzle.entries.map((e) => ({ id: e.id, answer: e.answer })));

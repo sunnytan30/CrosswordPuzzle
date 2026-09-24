@@ -110,4 +110,6 @@ export const admin = {
   release:   (t, pid)            => rpc('admin_release_participant', { p_participant_id: pid }, { accessToken: t }),
   reset:     (t, id)             => rpc('admin_reset_event', { p_event_id: id, p_confirm: 'RESET' }, { accessToken: t }),
   setTitle:  (t, id, title)      => rpc('admin_set_event_title', { p_event_id: id, p_title: title }, { accessToken: t }),
+  saveDraft: (t, id, rows)       => rpc('admin_save_draft', { p_event_id: id, p_rows: rows }, { accessToken: t }),
+  getDraft:  (t, id)             => rpc('admin_get_draft', { p_event_id: id }, { accessToken: t }),
 };

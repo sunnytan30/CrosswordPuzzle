@@ -14,6 +14,7 @@ const TOKEN_KEY = 'crossword.admin.token';
 const DRAFT_KEY = 'crossword.admin.draft';
 const TARGET_CLUES = 20;
 const BOARD_POLL_MS = 4000;
+const DRAFT_SAVE_MS = 1500;
 
 const $ = (id) => document.getElementById(id);
 
@@ -31,6 +32,8 @@ const state = {
   // True once the current preview has been saved, so "Use Grid" can grey out
   // until a fresh grid is generated.
   puzzleSaved: false,
+  draftTimer: null,
+  draftDirty: false,
 };
 
 // ----------------------------------------------------------------- helpers --
@@ -110,10 +113,23 @@ $('login-form').addEventListener('submit', async (event) => {
 function signOut(message) {
   clearInterval(state.boardTimer);
   state.boardTimer = null;
-  state.token = null;
-  safeRemove(TOKEN_KEY);
-  show('view-login');
-  if (message) setError('login-error', message);
+  // Flush any unsaved draft before the token goes, so signing out never
+  // costs the administrator their work.
+  clearTimeout(state.draftTimer);
+  const flushed = pushDraft();
+
+  const finish = () => {
+    state.token = null;
+    safeRemove(TOKEN_KEY);
+    // The server holds the draft now, so the local cache is only a stale
+    // copy of someone else's work on a shared machine.
+    safeRemove(DRAFT_KEY);
+    state.rows = [];
+    show('view-login');
+    if (message) setError('login-error', message);
+  };
+
+  Promise.resolve(flushed).then(finish, finish);
 }
 
 $('sign-out').addEventListener('click', () => signOut());
@@ -122,9 +138,9 @@ $('sign-out').addEventListener('click', () => signOut());
 
 async function enterConsole() {
   show('view-console');
-  loadDraft();
-  renderClueSection();
+  // The event has to be known before the draft, since the draft belongs to it.
   await refreshEvent();
+  await loadDraftFromServer();
   startBoardPolling();
 }
 
@@ -219,6 +235,7 @@ $('create-form').addEventListener('submit', async (event) => {
   if (result) {
     note('Competition created. Now enter your clues and generate a grid.');
     await refreshEvent();
+    await loadDraftFromServer();
   }
 });
 
@@ -267,8 +284,75 @@ function renderClueSection() {
   if (!empty) renderRows();
 }
 
+/**
+ * Keep the draft in two places: localStorage so typing never blocks on the
+ * network, and the competition row so the work follows the administrator to
+ * another device or another browser. The server copy is authoritative.
+ */
 function saveDraft() {
   safeWrite(DRAFT_KEY, JSON.stringify(state.rows));
+
+  if (!state.event || !state.token) return;
+  state.draftDirty = true;
+  setDraftStatus('Saving…');
+
+  clearTimeout(state.draftTimer);
+  state.draftTimer = setTimeout(pushDraft, DRAFT_SAVE_MS);
+}
+
+async function pushDraft() {
+  if (!state.event || !state.token || !state.draftDirty) return;
+  const rows = state.rows.map(({ clue, answer }) => ({ clue, answer }));
+  try {
+    await admin.saveDraft(state.token, state.event.id, rows);
+    state.draftDirty = false;
+    setDraftStatus(`Saved to the competition at ${new Date().toLocaleTimeString('en-GB')}`);
+  } catch (error) {
+    // Typing must not be interrupted by a blip; the local copy still holds.
+    setDraftStatus('Not saved to the server yet — retrying.');
+  }
+}
+
+function setDraftStatus(text) {
+  const el = $('draft-status');
+  if (el) el.textContent = text;
+}
+
+/**
+ * Load the draft for this competition, preferring the server so a second
+ * device sees the same clues. Falls back to this browser's copy when there is
+ * no competition yet or the server has nothing.
+ */
+async function loadDraftFromServer() {
+  if (!state.event || !state.token) { loadDraft(); renderClueSection(); return; }
+
+  let result = null;
+  try {
+    result = await admin.getDraft(state.token, state.event.id);
+  } catch {
+    loadDraft();
+    renderClueSection();
+    return;
+  }
+
+  const rows = Array.isArray(result?.rows) ? result.rows : [];
+  if (rows.length) {
+    state.rows = rows.map((r) => ({ clue: String(r.clue ?? ''), answer: String(r.answer ?? '') }));
+    safeWrite(DRAFT_KEY, JSON.stringify(state.rows));
+    setDraftStatus(result.source === 'puzzle'
+      ? 'Loaded the clues already saved to this competition.'
+      : `Loaded the draft saved at ${result.saved_at ? new Date(result.saved_at).toLocaleString('en-GB') : 'an earlier time'}.`);
+  } else {
+    // Nothing on the server. Anything in this browser is unsaved work, so
+    // keep it and push it up rather than discarding it.
+    loadDraft();
+    if (state.rows.length) {
+      state.draftDirty = true;
+      pushDraft();
+    }
+  }
+  state.focusedRow = null;
+  renderClueSection();
 }
 
 function renderRows() {
@@ -684,6 +768,12 @@ $('export-csv').addEventListener('click', () => {
   link.download = `crossword-results-${new Date().toISOString().slice(0, 10)}.csv`;
   link.click();
   URL.revokeObjectURL(url);
+});
+
+// A closing tab may never run the debounce timer, so flush on the way out.
+window.addEventListener('pagehide', () => {
+  clearTimeout(state.draftTimer);
+  pushDraft();
 });
 
 // ------------------------------------------------------------------- boot ---
