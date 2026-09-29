@@ -203,6 +203,43 @@ latencies are pessimistic compared with 200 separate phones on separate
 connections; and joining is the slowest call because it writes a row, which is
 why the join screen opens before the start rather than at it.
 
+### Full-event rehearsal, 29 September 2026
+
+A behavioural simulation rather than a load test: 200 competitors arriving over
+45 seconds, waiting two minutes in the waiting room, starting together, pausing
+between answers, mistyping a quarter of their entries and waiting out the
+cooldown before retrying. `scripts/simulate-event.mjs` runs it.
+
+| | |
+|---|---|
+| joined / started / finished | 200 / 200 / 200 |
+| solved all 20 | 200 |
+| calls | 12,717 over 357s (35.6 req/s) |
+| latency p50 / p95 | 330 ms / 381 ms |
+| wrong guesses | 1,167 |
+| errors | **none** |
+| finish times | 65.9s fastest, 132.2s mean, 203.2s slowest |
+| leaderboard rows out of order | **0** |
+| ties on identical finish time | 0 |
+
+Two things this surfaced that the raw load tests could not:
+
+**The podium is decided by seconds.** Third place finished 71.6s and fourth
+72.4s — a gap of 0.8 seconds across 200 competitors. This is why finish times
+are stamped by the database when it receives the final correct answer, and why
+no part of the ranking may depend on a device clock. It also means a competitor
+on a poor connection can lose a place to latency: their answer is correct when
+it arrives, not when it was typed. That is inherent to any online race, but it
+should be said out loud before a prize is awarded.
+
+**The cooldown holds under abuse.** Hammering one clue gives one guess, then
+refusals carrying a counting-down `retry_after_ms`, then one more guess: about
+20 attempts per minute on a single entry. Brute-forcing even a four-letter
+answer is not viable inside an event.
+
+Data written by a 200-competitor event: 4,000 solved rows, 5,169 attempt rows,
+and an `app` schema of 2.4 MB — against the 500 MB the Free plan allows.
+
 ## 10. Build plan (2–4 weeks)
 
 1. Grid generator + test suite — **done**

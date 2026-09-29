@@ -29,6 +29,7 @@ model](docs/DESIGN.md)** · **[Database](supabase/README.md)**
 - [x] Test suites: generator, database, browser, load
 - [x] Deployed to Cloudflare Workers
 - [x] Administrator account created and verified
+- [x] Simulated rehearsal: 200 competitors, no errors
 - [ ] Rehearsal with real devices
 
 ## How the outcome is kept honest
@@ -66,7 +67,9 @@ web/                  The two apps. No build step, no dependencies.
 supabase/migrations/  Database schema, functions, grants and tests
 dev/server.mjs        Local server mirroring the Supabase API in memory
 tests/                Generator unit tests and browser tests
-scripts/loadtest.mjs  Simulates a full field against a live instance
+scripts/loadtest.mjs  Hammers the endpoints to find a ceiling
+scripts/simulate-event.mjs  Full dress rehearsal: arrivals, waiting room,
+                      thinking time, mistakes, cooldowns, staggered finishes
 docs/                 Design and deployment
 ```
 
