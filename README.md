@@ -70,6 +70,8 @@ tests/                Generator unit tests and browser tests
 scripts/loadtest.mjs  Hammers the endpoints to find a ceiling
 scripts/simulate-event.mjs  Full dress rehearsal: arrivals, waiting room,
                       thinking time, mistakes, cooldowns, staggered finishes
+scripts/simulate-surge.mjs  Surge rehearsal: a large field signing up inside a
+                      narrow window, then playing in mixed ways
 docs/                 Design and deployment
 ```
 

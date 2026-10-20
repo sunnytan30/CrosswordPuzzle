@@ -240,6 +240,45 @@ answer is not viable inside an event.
 Data written by a 200-competitor event: 4,000 solved rows, 5,169 attempt rows,
 and an `app` schema of 2.4 MB — against the 500 MB the Free plan allows.
 
+### Surge rehearsal, 20 October 2026
+
+The awkward case: everyone signing up at once, then playing in mixed ways.
+300 competitors joining inside a 10-second window, then five minutes of play
+split across five behaviour profiles — racers, steady solvers, strugglers,
+idlers, and reconnectors whose phone drops and reloads mid-game.
+`scripts/simulate-surge.mjs` runs it.
+
+| | |
+|---|---|
+| signed up | 300 / 300 in 9.44s, no duplicate employee IDs |
+| reached the puzzle | 300 |
+| finished all 12 clues | 204 (66 partial, 30 barely played) |
+| calls | 12,338 at 31.1 req/s |
+| signup burst latency | p50 720 ms, p95 1,280 ms, max 1,560 ms |
+| all calls | p50 315 ms, p95 825 ms, max 1,982 ms |
+| leaderboard rows out of order | **0** |
+| finishers credited short of all clues | **0** |
+| errors | **none** |
+
+Three things worth keeping:
+
+**A spread burst is easier than a simultaneous one.** 300 sign-ups over ten
+seconds peaked at 1.56s, where 400 fired simultaneously had reached 8.6s. The
+join is the slowest call because it writes a row, so letting people drift into
+the waiting room before the start is worth more than any tuning.
+
+**Reconnection preserves progress.** The 32 reconnector profiles refetched
+state and the grid mid-game and asserted the server still reported every clue
+they had solved. None lost anything.
+
+**The podium is decided by fractions of a second.** Second and third finished
+0.1s apart, after 34.2s and 38.1s. Finish times are stamped by the database
+when it receives the final correct answer, so a device clock cannot influence
+a place — but a slow connection can.
+
+Footprint: the database grew from 13 MB to 14 MB, under 3% of the Free plan's
+500 MB, and egress was a fraction of a percent of the 5 GB monthly allowance.
+
 ## 10. Build plan (2–4 weeks)
 
 1. Grid generator + test suite — **done**
